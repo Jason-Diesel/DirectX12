@@ -6,6 +6,10 @@ static std::wstring CreateStringandIndexToWString(std::string str, int index) {
 	return temp;
 }
 
+static std::wstring createStringToWString(std::string str)
+{
+	return std::wstring(str.begin(), str.end());
+}
 
 namespace HF {
 	template <typename T>

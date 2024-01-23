@@ -22,6 +22,9 @@
     <Filter Include="Header Files\DirectX12\Reoueces">
       <UniqueIdentifier>{85e10ccb-0355-4ece-b274-bf7033ec6fb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Object">
+      <UniqueIdentifier>{9350d910-709d-40f7-ae76-d9933877cd40}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -42,10 +45,13 @@
     <ClCompile Include="Graphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectXCommand.cpp">
+    <ClCompile Include="TestObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Resources.cpp">
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,13 +71,7 @@
     <ClInclude Include="Graphics.h">
       <Filter>Header Files\DirectX12</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>Header Files\DirectX12</Filter>
-    </ClInclude>
     <ClInclude Include="d3dx12.h">
-      <Filter>Header Files\DirectX12</Filter>
-    </ClInclude>
-    <ClInclude Include="DirectXCommand.h">
       <Filter>Header Files\DirectX12</Filter>
     </ClInclude>
     <ClInclude Include="HelperFunctions.h">
@@ -80,8 +80,25 @@
     <ClInclude Include="CommonHeader.h">
       <Filter>Header Files\DirectX12</Filter>
     </ClInclude>
-    <ClInclude Include="Resources.h">
+    <ClInclude Include="Vertex.h">
       <Filter>Header Files\DirectX12\Reoueces</Filter>
     </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Header Files\Object</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

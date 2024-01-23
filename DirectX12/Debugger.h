@@ -13,7 +13,9 @@ void RedirectIOToConsole();
 #endif
 
 #include <iostream>
-#define breakDebug errorMSG(__FILE__, __LINE__);__debugbreak()
+#define CheckHR(x) if(x != S_OK){errorMSG(__FILE__, __LINE__);__debugbreak();}
+#define breakDebug errorMSG(__FILE__, __LINE__);
+//#define CheckHR(x) if(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)) != S_OK){errorMSG(__FILE__, __LINE__);__debugbreak();}
 
 static void errorMSG(const char* file, int line)
 {

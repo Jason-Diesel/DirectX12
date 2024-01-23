@@ -9,6 +9,10 @@
 
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+//#include <wrl.h>
 ///////////////
+#include "Debugger.h"
+#include "HelperFunctions.h"
+
 
 #define NrOfFrameBuffers 2
