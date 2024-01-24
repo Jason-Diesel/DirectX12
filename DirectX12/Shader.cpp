@@ -5,10 +5,23 @@ Shader::Shader()
 	
 }
 
-void Shader::init(ID3D12Device8* device)
+void Shader::init(ID3D12Device8* device, std::vector<ConstantBuffer> constantBuffers, std::vector<D3D12_INPUT_ELEMENT_DESC> customInputLayout)
 {
+	std::vector<CD3DX12_ROOT_PARAMETER> rootParameters{};
+	rootParameters.resize(constantBuffers.size());
+	
+	for (int i = 0; i < constantBuffers.size(); i++)
+	{
+		rootParameters[i].InitAsConstants(
+			constantBuffers[i].size / 4, 
+			constantBuffers[i].shaderRigister, 
+			0, 
+			constantBuffers[i].shaderVisablility
+		);
+	}
+	
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init((uint32_t)rootParameters.size(), rootParameters.data(), 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
 	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
@@ -37,10 +50,6 @@ void Shader::init(ID3D12Device8* device)
 			CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtvFormat;
 		}pipelineStateStream;
 
-		const D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-			{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-			{"Color", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		};
 		std::string filePath;
 #ifdef _DEBUG
 		filePath = "../x64/Debug/";
@@ -55,7 +64,7 @@ void Shader::init(ID3D12Device8* device)
 		D3DReadFileToBlob(createStringToWString(filePath + "PixelShader.cso").c_str(), &pixelShader);
 
 		pipelineStateStream.rootSignature = rootSignature.Get();
-		pipelineStateStream.inputLayout = { inputLayout, (uint32_t)_countof(inputLayout) };//Hopefully this is okay?
+		pipelineStateStream.inputLayout = { customInputLayout.data(), (uint32_t)customInputLayout.size()};//Hopefully this is okay?
 		pipelineStateStream.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		pipelineStateStream.vs = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
 		pipelineStateStream.ps = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
@@ -67,6 +76,7 @@ void Shader::init(ID3D12Device8* device)
 		const D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
 			sizeof(PipelineStateStream), &pipelineStateStream
 		};
+
 		CheckHR(device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&pipelineState)))
 		}
 }

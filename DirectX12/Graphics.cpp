@@ -5,9 +5,26 @@ Graphics::Graphics():
 {
 	window.Initialize(GetModuleHandle(NULL), "Penis", "a", 720, 480);
 
+	{
+		const DirectX::FXMVECTOR camPosition = DirectX::XMVectorSet(0, 0, -1, 1);
+		const DirectX::FXMVECTOR focusPoint = DirectX::XMVectorSet(0, 0, 0, 1);
+		const DirectX::FXMVECTOR upDirection = DirectX::XMVectorSet(0, 1, 0, 0);
+		viewProj.view = DirectX::XMMatrixLookAtLH(camPosition, focusPoint, upDirection);
+		const float aspectRatio = float(windowWidth) / float(windowHeight);
+		viewProj.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f), aspectRatio, 0.01f, 2000.f);
+	}
+	initInputLayouts();
 	setUpDirectX12();
 
-	defShader.init(getDevice());
+	std::vector<ConstantBuffer> bufferForDefShader;
+	bufferForDefShader.push_back(ConstantBuffer{ sizeof(ViewProj), 0, D3D12_SHADER_VISIBILITY_VERTEX });//maybe can be change to all
+	bufferForDefShader.push_back(ConstantBuffer{ sizeof(Transform), 1, D3D12_SHADER_VISIBILITY_VERTEX });
+	defShader.init(
+		getDevice(),
+		bufferForDefShader,
+		InputLayouts[0]
+	);
+
 #ifdef _DEBUG
 	{
 		Microsoft::WRL::ComPtr <ID3D12InfoQueue> infoQueue;
@@ -92,15 +109,14 @@ void Graphics::beginFrame()
 	commandList->SetPipelineState(defShader.pipelineState.Get());
 	commandList->SetGraphicsRootSignature(defShader.rootSignature.Get());
 
-	//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	commandList->RSSetViewports(1, &viewPort);
 	commandList->RSSetScissorRects(1, &scissorRect);
 
 	commandList->OMSetRenderTargets(1, &rtv, TRUE, nullptr);
 
-
+	commandList->SetGraphicsRoot32BitConstants(0, sizeof(ViewProj) / 4, &viewProj, 0);
 }
 
 void Graphics::endFrame()
@@ -140,12 +156,6 @@ ID3D12Device8* Graphics::getDevice()
 
 ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 {
-	const ColorVertex vertexData[] = {
-		{ {0, 0.5, 0},{1,0,0} },
-		{ {0.5,-0.25, 0},{0,1,0} },
-		{ {-0.5,-0.25, 0},{0,0,0} }
-	};
-
 	ID3D12Resource* vertexBuffer = nullptr;
 	uint32_t nrOfVertecies = (uint32_t)vertecies.size();
 	{
@@ -309,6 +319,15 @@ void Graphics::setUpDirectX12()
 		GetLastError();
 		breakDebug;
 	}
+}
+
+void Graphics::initInputLayouts()
+{
+	std::vector<D3D12_INPUT_ELEMENT_DESC> defLayout = {
+		{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"Color", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	};
+	InputLayouts.push_back(defLayout);
 }
 
 IDXGIAdapter4* Graphics::determineMainAdapter()

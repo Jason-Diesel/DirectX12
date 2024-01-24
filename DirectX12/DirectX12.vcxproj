@@ -134,6 +134,7 @@
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -143,10 +144,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonHeader.h" />
+    <ClInclude Include="ConstantBuffers.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Debugger.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="HelperFunctions.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="Shader.h" />

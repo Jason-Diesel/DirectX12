@@ -19,7 +19,6 @@
 #endif
 
 #define getGFX Graphics::getInstance()
-
 constexpr D3D_FEATURE_LEVEL minumumFeatureLevel{ D3D_FEATURE_LEVEL_11_0 };
 
 class Graphics
@@ -66,11 +65,16 @@ private://Settings
 	uint32_t windowHeight = 480;
 	Window window;
 	const CD3DX12_RECT scissorRect { 0,0, LONG_MAX, LONG_MAX };
-	const CD3DX12_VIEWPORT viewPort { 0.0f, 0.0f, windowWidth, windowHeight };
+	const CD3DX12_VIEWPORT viewPort { 0.0f, 0.0f, (float)windowWidth, (float)windowHeight };
+
 	float backGroundColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	Shader defShader;
+	ViewProj viewProj;
+
+	std::vector<std::vector<D3D12_INPUT_ELEMENT_DESC>> InputLayouts;//make a map maybe?
 private:
 	void setUpDirectX12();
+	void initInputLayouts();
 	//helperfunctions
 	D3D_FEATURE_LEVEL getMaxFeatureLevel(IDXGIAdapter4* main_adapter);
 	IDXGIAdapter4* determineMainAdapter();
