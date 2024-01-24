@@ -1,20 +1,36 @@
 #include "Graphics.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
 
 Graphics::Graphics():
 	main_device(nullptr), dxgi_factory(nullptr)
 {
-	window.Initialize(GetModuleHandle(NULL), "Penis", "a", 720, 480);
+	window.Initialize(GetModuleHandle(NULL), "Penis", "a", windowWidth, windowHeight);
+
 
 	{
-		const DirectX::FXMVECTOR camPosition = DirectX::XMVectorSet(0, 0, -1, 1);
+		const DirectX::FXMVECTOR camPosition = DirectX::XMVectorSet(0, 0, -5, 1);
 		const DirectX::FXMVECTOR focusPoint = DirectX::XMVectorSet(0, 0, 0, 1);
 		const DirectX::FXMVECTOR upDirection = DirectX::XMVectorSet(0, 1, 0, 0);
 		viewProj.view = DirectX::XMMatrixLookAtLH(camPosition, focusPoint, upDirection);
 		const float aspectRatio = float(windowWidth) / float(windowHeight);
-		viewProj.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f), aspectRatio, 0.01f, 2000.f);
+		viewProj.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), aspectRatio, 0.01f, 2000.f);
 	}
 	initInputLayouts();
 	setUpDirectX12();
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(window.getRenderWindow().getHandle());
+	ImGui_ImplDX12_Init(
+		main_device.Get(),
+		NrOfFrameBuffers,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		rtvDescriptorHeap.Get(),
+		rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		rtvDescriptorHeap->GetGPUDescriptorHandleForHeapStart()
+		);
 
 	std::vector<ConstantBuffer> bufferForDefShader;
 	bufferForDefShader.push_back(ConstantBuffer{ sizeof(ViewProj), 0, D3D12_SHADER_VISIBILITY_VERTEX });//maybe can be change to all
@@ -22,6 +38,7 @@ Graphics::Graphics():
 	defShader.init(
 		getDevice(),
 		bufferForDefShader,
+		1,
 		InputLayouts[0]
 	);
 
@@ -47,7 +64,7 @@ void Graphics::init()
 
 Graphics::~Graphics()
 {
-
+	ImGui::DestroyContext();
 #ifdef _DEBUG
 	{
 		//{
@@ -82,7 +99,16 @@ Graphics& Graphics::getInstance()
 
 void Graphics::updateWindow()
 {
-	window.Update();
+	//window.Update();
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	bool t = true;
+	ImGui::ShowDemoWindow(&t);
+
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 }
 
 void Graphics::beginFrame()
@@ -104,6 +130,7 @@ void Graphics::beginFrame()
 		);
 		commandList->ResourceBarrier(1, &barrier);
 		commandList->ClearRenderTargetView(rtv, backGroundColor, 0, nullptr);
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	}
 	
 	commandList->SetPipelineState(defShader.pipelineState.Get());
@@ -114,7 +141,7 @@ void Graphics::beginFrame()
 	commandList->RSSetViewports(1, &viewPort);
 	commandList->RSSetScissorRects(1, &scissorRect);
 
-	commandList->OMSetRenderTargets(1, &rtv, TRUE, nullptr);
+	commandList->OMSetRenderTargets(1, &rtv, TRUE, &dsvHandle);
 
 	commandList->SetGraphicsRoot32BitConstants(0, sizeof(ViewProj) / 4, &viewProj, 0);
 }
@@ -154,13 +181,13 @@ ID3D12Device8* Graphics::getDevice()
 	return this->main_device.Get();
 }
 
-ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
+ID3D12Resource* Graphics::createVertexBuffer(std::vector<Vertex> vertecies)
 {
 	ID3D12Resource* vertexBuffer = nullptr;
 	uint32_t nrOfVertecies = (uint32_t)vertecies.size();
 	{
 		const CD3DX12_HEAP_PROPERTIES heapProps{ D3D12_HEAP_TYPE_DEFAULT };
-		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfVertecies * sizeof(ColorVertex));
+		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfVertecies * sizeof(Vertex));
 		CheckHR(getGFX.getDevice()->CreateCommittedResource(
 			&heapProps,
 			D3D12_HEAP_FLAG_NONE,
@@ -173,7 +200,7 @@ ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexUploadBuffer;
 	{
 		const CD3DX12_HEAP_PROPERTIES heapProps{ D3D12_HEAP_TYPE_UPLOAD };
-		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfVertecies * sizeof(ColorVertex));
+		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfVertecies * sizeof(Vertex));
 		CheckHR(getGFX.getDevice()->CreateCommittedResource(
 			&heapProps,
 			D3D12_HEAP_FLAG_NONE,
@@ -184,7 +211,7 @@ ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 		))
 	}
 	{
-		ColorVertex* mappedVertexData = nullptr;
+		Vertex* mappedVertexData = nullptr;
 		CheckHR(vertexUploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedVertexData)))
 		std::ranges::copy(vertecies, mappedVertexData);
 		vertexUploadBuffer->Unmap(0, nullptr);
@@ -193,6 +220,13 @@ ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 	CheckHR(commandAllocator->Reset())
 	CheckHR(commandList->Reset(commandAllocator.Get(), nullptr))
 	commandList->CopyResource(vertexBuffer, vertexUploadBuffer.Get());
+	{
+		const CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			vertexBuffer,
+			D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+		);
+		commandList->ResourceBarrier(1, &barrier);
+	}
 	CheckHR(commandList->Close())
 	ID3D12CommandList* const commandLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
@@ -203,6 +237,78 @@ ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 		breakDebug;
 	}
 	return vertexBuffer;
+}
+
+ID3D12Resource* Graphics::createIndeciesBuffer(std::vector<uint32_t> indecies)
+{
+	ID3D12Resource* indeciesBuffer = nullptr;
+	uint32_t nrOfindecies = (uint32_t)indecies.size();
+	{
+		const CD3DX12_HEAP_PROPERTIES heapProps{ D3D12_HEAP_TYPE_DEFAULT };
+		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfindecies * sizeof(uint32_t));
+		CheckHR(getGFX.getDevice()->CreateCommittedResource(
+			&heapProps,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&indeciesBuffer)
+		))
+	}
+	Microsoft::WRL::ComPtr<ID3D12Resource> indeciesUploadBuffer;
+	{
+		const CD3DX12_HEAP_PROPERTIES heapProps{ D3D12_HEAP_TYPE_UPLOAD };
+		const auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(nrOfindecies * sizeof(uint32_t));
+		CheckHR(getGFX.getDevice()->CreateCommittedResource(
+			&heapProps,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&indeciesUploadBuffer)
+		))
+	}
+	{
+		uint32_t* mappedIndeciesData = nullptr;
+		CheckHR(indeciesUploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedIndeciesData)))
+			std::ranges::copy(indecies, mappedIndeciesData);
+		indeciesUploadBuffer->Unmap(0, nullptr);
+	}
+
+	CheckHR(commandAllocator->Reset())
+	CheckHR(commandList->Reset(commandAllocator.Get(), nullptr))
+	commandList->CopyResource(indeciesBuffer, indeciesUploadBuffer.Get());
+	{
+		const CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			indeciesBuffer,
+			D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER
+		);
+		commandList->ResourceBarrier(1, &barrier);
+	}
+	CheckHR(commandList->Close())
+	ID3D12CommandList* const commandLists[] = { commandList.Get() };
+	commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+	CheckHR(commandQueue->Signal(fence.Get(), ++fenceValue))
+		CheckHR(fence->SetEventOnCompletion(fenceValue, fenceEvent))
+		if (WaitForSingleObject(fenceEvent, INFINITE) == WAIT_FAILED)
+		{
+			breakDebug;
+		}
+	return indeciesBuffer;
+}
+
+TextureViewClass Graphics::createTexture(const std::string& filePath)
+{
+	return CreateTexture(
+		filePath,
+		main_device.Get(),
+		commandAllocator.Get(),
+		commandList.Get(),
+		commandQueue.Get(),
+		fence.Get(),
+		fenceValue,
+		fenceEvent
+		);
 }
 
 bool Graphics::processMessages()
@@ -218,6 +324,16 @@ void Graphics::changeBackgroundColor(float r, float g, float b, float a)
 	backGroundColor[3] = a;
 }
 
+Mouse& Graphics::getMouse()
+{
+	return this->window.getMouse();
+}
+
+Keyboard& Graphics::getKeyboard()
+{
+	return this->window.getKeyboard();
+}
+
 void Graphics::setUpDirectX12()
 {
 	if (main_device) {
@@ -227,10 +343,10 @@ void Graphics::setUpDirectX12()
 	uint32_t dxgi_factory_flags = 0;
 #ifdef _DEBUG
 	{
-		Microsoft::WRL::ComPtr<ID3D12Debug3> debugInterface;
+		Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface;
 		CheckHR(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)))
 		debugInterface->EnableDebugLayer();
-		//debugInterface->SetEnableGPUBasedValidation(TRUE);
+		debugInterface->SetEnableGPUBasedValidation(TRUE);
 	}
 	dxgi_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
@@ -310,12 +426,49 @@ void Graphics::setUpDirectX12()
 		}
 	}
 
+	{
+		const CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+		const CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(
+			DXGI_FORMAT_D32_FLOAT,
+			windowWidth, windowHeight,
+			1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL
+		);
+
+		const D3D12_CLEAR_VALUE clearValue = {
+			.Format = DXGI_FORMAT_D32_FLOAT,
+			.DepthStencil = {1.0f, 0}
+		};
+		CheckHR(main_device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&desc,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&clearValue,
+			IID_PPV_ARGS(&depthBuffer)
+		))
+	}
+
+	{
+		const D3D12_DESCRIPTOR_HEAP_DESC desc = {
+			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+			.NumDescriptors = 1
+		};
+		main_device->CreateDescriptorHeap(
+			&desc,
+			IID_PPV_ARGS(&depthBufferDescriptorHeap)
+		);
+		
+		dsvHandle = { depthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart() };
+		main_device->CreateDepthStencilView(depthBuffer.Get(), nullptr, dsvHandle);
+	}
+
+
 	CheckHR(main_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)))
 
-		CheckHR(main_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)))
-		CheckHR(commandList->Close())
+	CheckHR(main_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)))
+	CheckHR(commandList->Close())
 
-		fenceValue = 0;
+	fenceValue = 0;
 	CheckHR(main_device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))
 
 	fenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
@@ -329,8 +482,8 @@ void Graphics::setUpDirectX12()
 void Graphics::initInputLayouts()
 {
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defLayout = {
-		{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"Color", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 	};
 	InputLayouts.push_back(defLayout);
 }

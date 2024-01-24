@@ -1,10 +1,10 @@
 #include "WindowContainer.h"
-//#include "imgui_impl_win32.h"
+//#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 WindowContainer::WindowContainer()
 {
-	//this->mouse = new Mouse();
-	//this->keyboard = new Keyboard();
 
 	static bool raw_input_initialized = false;
 	if (raw_input_initialized == false)
@@ -28,113 +28,112 @@ WindowContainer::WindowContainer()
 
 WindowContainer::~WindowContainer()
 {
-	//delete mouse;
-	//delete keyboard;
 }
 
 LRESULT WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	//if (!mouse->getMouseActive() && ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-	//{
-	//	return true;
-	//}
+	
+	if (!mouse.getMouseActive() && ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+	{
+		return true;
+	}
 	switch (uMsg)
 	{
 	case WM_KEYUP:
 	{
 		unsigned char ch = static_cast<unsigned char>(wParam);
-		//keyboard->onKeyReleased(ch);
+		keyboard.onKeyReleased(ch);
 		return 0;
 	}
 	case WM_KEYDOWN:
 	{
 		unsigned char ch = static_cast<unsigned char>(wParam);
-		//keyboard->onKeyDown(ch);
+		keyboard.onKeyDown(ch);
 		return 0;
 	}
 	case WM_MOUSEMOVE:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onMouseMove(x, y);
+		mouse.onMouseMove(x, y);
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onLeftPressed(x, y);
+		mouse.onLeftPressed(x, y);
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onRightPressed(x, y);
+		mouse.onRightPressed(x, y);
 		return 0;
 	}
 	case WM_MBUTTONDOWN:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onMiddlePressed(x, y);
+		mouse.onMiddlePressed(x, y);
 		return 0;
 	}
 	case WM_LBUTTONUP:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onLeftReleased(x, y);
+		mouse.onLeftReleased(x, y);
 		return 0;
 	}
 	case WM_RBUTTONUP:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onRightReleased(x, y);
+		mouse.onRightReleased(x, y);
 		return 0;
 	}
 	case WM_MBUTTONUP:
 	{
 		int x = LOWORD(lParam);
 		int y = HIWORD(lParam);
-		//mouse->onMiddleReleased(x, y);
+		mouse.onMiddleReleased(x, y);
 		return 0;
 	}
 	case WM_MOUSEWHEEL:
 	{
-		//int x = LOWORD(lParam);
-		//int y = HIWORD(lParam);
-		//if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
-		//{
-		//	mouse->onWheelUp(x, y);
-		//}
-		//else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
-		//{
-		//	mouse->onWheelDown(x, y);
-		//}
+		int x = LOWORD(lParam);
+		int y = HIWORD(lParam);
+		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
+		{
+			mouse.onWheelUp(x, y);
+		}
+		else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
+		{
+			mouse.onWheelDown(x, y);
+		}
 		return 0;
 	}
 	case WM_INPUT:
 	{
-		//if (mouse->getMouseActive()) {
-		//	UINT dataSize;
-		//	GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, NULL, &dataSize, sizeof(RAWINPUTHEADER)); //Need to populate data size first
-		//
-		//	if (dataSize > 0)
-		//	{
-		//		std::unique_ptr<BYTE[]> rawdata = std::make_unique<BYTE[]>(dataSize);
-		//		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
-		//		{
-		//			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(rawdata.get());
-		//			if (raw->header.dwType == RIM_TYPEMOUSE)
-		//			{
-		//				//std::cout << raw->data.mouse.lLastX << ":" << raw->data.mouse.lLastY << std::endl;
-		//				mouse->onMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
-		//			}
-		//		}
-		//	}
-		//}
+		if (mouse.getMouseActive()) {
+			UINT dataSize;
+			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, NULL, &dataSize, sizeof(RAWINPUTHEADER)); //Need to populate data size first
+		
+			if (dataSize > 0)
+			{
+				std::unique_ptr<BYTE[]> rawdata = std::make_unique<BYTE[]>(dataSize);
+				if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
+				{
+					RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(rawdata.get());
+					if (raw->header.dwType == RIM_TYPEMOUSE)
+					{
+						//std::cout << raw->data.mouse.lLastX << ":" << raw->data.mouse.lLastY << std::endl;
+						mouse.onMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
+					}
+				}
+			}
+		}
 		return DefWindowProc(hwnd, uMsg, wParam, lParam); //Need to call DefWindowProc for WM_INPUT messages
 	}
 	default:
@@ -147,12 +146,12 @@ RenderWindow& WindowContainer::getRenderWindow()
 	return this->render_window;
 }
 
-//Mouse*& WindowContainer::getMouse()
-//{
-//	return this->mouse;
-//}
-//
-//Keyboard*& WindowContainer::getKeyboard()
-//{
-//	return this->keyboard;
-//}
+Keyboard& WindowContainer::getKeyboard()
+{
+	return this->keyboard;
+}
+
+Mouse& WindowContainer::getMouse()
+{
+	return this->mouse;
+}

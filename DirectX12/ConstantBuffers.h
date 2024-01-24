@@ -7,6 +7,8 @@ struct ConstantBuffer {
 	D3D12_SHADER_VISIBILITY shaderVisablility = D3D12_SHADER_VISIBILITY_ALL;
 };
 
+
+
 struct ViewProj
 {
 	DirectX::XMMATRIX view;

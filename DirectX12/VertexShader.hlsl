@@ -1,13 +1,13 @@
 struct VertexInput
 {
     float3 position : Position;
-    float3 color : Color;
+    float2 uv : UV;
 };
 
 struct VertexOutput
 {
     float4 position : SV_POSITION;
-    float3 color : Color;
+    float2 uv : UV;
 };
 
 cbuffer MVP : register(b0)
@@ -26,7 +26,7 @@ VertexOutput main(VertexInput input)
     VertexOutput output;
 
     float4x4 mvp = mul(mul(transform, view), projection);
-    output.color = input.color;
+    output.uv = input.uv;
     output.position = mul(float4(input.position, 1.0), mvp);
 
     return output;

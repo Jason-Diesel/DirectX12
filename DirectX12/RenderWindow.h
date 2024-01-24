@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <string>
 #include <iostream>
-
 #include "resource.h"
 
 class WindowContainer;

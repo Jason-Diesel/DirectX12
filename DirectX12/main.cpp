@@ -19,6 +19,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	getGFX.init();
 
 	TestObject test;
+	TestObject test2;
+	test2.position.x += 0.5;
+	
 	float x = 0;
 	while (msg.message != WM_QUIT && getGFX.processMessages())
 	{
@@ -29,8 +32,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		}
 		getGFX.changeBackgroundColor(sin(x), 0, 0);
 		x += 0.01f;
+		test2.rotation.z += 0.05f;
 		getGFX.beginFrame();
 		test.render();
+		test2.render();
 		getGFX.endFrame();
 	}
 

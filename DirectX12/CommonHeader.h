@@ -1,5 +1,6 @@
 #pragma once
 
+#include <initguid.h>
 /////DX12/////
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -14,5 +15,14 @@
 #include "Debugger.h"
 #include "HelperFunctions.h"
 
+
+class TextureViewClass {
+public:
+	TextureViewClass();
+	ID3D12DescriptorHeap* srvHeap;
+	ID3D12Resource* srvResource;
+private:
+
+};
 
 #define NrOfFrameBuffers 2
