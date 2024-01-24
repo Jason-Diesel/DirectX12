@@ -20,7 +20,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	TestObject test;
 	float x = 0;
-	while (msg.message != WM_QUIT)
+	while (msg.message != WM_QUIT && getGFX.processMessages())
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{

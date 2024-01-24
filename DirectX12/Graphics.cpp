@@ -205,6 +205,11 @@ ID3D12Resource* Graphics::createVertexBuffer(std::vector<ColorVertex> vertecies)
 	return vertexBuffer;
 }
 
+bool Graphics::processMessages()
+{
+	return window.ProcessMessages();
+}
+
 void Graphics::changeBackgroundColor(float r, float g, float b, float a)
 {
 	backGroundColor[0] = r;

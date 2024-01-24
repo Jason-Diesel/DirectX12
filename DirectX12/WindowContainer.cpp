@@ -103,16 +103,16 @@ LRESULT WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 	}
 	case WM_MOUSEWHEEL:
 	{
-		int x = LOWORD(lParam);
-		int y = HIWORD(lParam);
-		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
-		{
-			//mouse->onWheelUp(x, y);
-		}
-		else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
-		{
-			//mouse->onWheelDown(x, y);
-		}
+		//int x = LOWORD(lParam);
+		//int y = HIWORD(lParam);
+		//if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
+		//{
+		//	mouse->onWheelUp(x, y);
+		//}
+		//else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
+		//{
+		//	mouse->onWheelDown(x, y);
+		//}
 		return 0;
 	}
 	case WM_INPUT:
@@ -151,9 +151,8 @@ RenderWindow& WindowContainer::getRenderWindow()
 //{
 //	return this->mouse;
 //}
-
+//
 //Keyboard*& WindowContainer::getKeyboard()
 //{
 //	return this->keyboard;
 //}
-

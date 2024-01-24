@@ -39,6 +39,7 @@ public:
 	ID3D12GraphicsCommandList* getCommandList();
 	ID3D12Device8* getDevice();
 	ID3D12Resource* createVertexBuffer(std::vector<ColorVertex> vertecies);
+	bool processMessages();
 public:
 	void changeBackgroundColor(float r, float g, float b, float a = 1.0);
 private:
