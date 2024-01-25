@@ -21,6 +21,7 @@ public:
 	TextureViewClass();
 	ID3D12DescriptorHeap* srvHeap;
 	ID3D12Resource* srvResource;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle;
 private:
 
 };

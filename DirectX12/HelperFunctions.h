@@ -1,4 +1,5 @@
 #pragma once
+#include "CommonHeader.h"
 
 static std::wstring CreateStringandIndexToWString(std::string str, int index) {
 	std::string t = str + std::to_string(index);
@@ -21,4 +22,9 @@ namespace HF {
 			resource = nullptr;
 		}
 	}
+
+	void xRotation(DirectX::XMMATRIX& matrix, const float& rotation);
+	void yRotation(DirectX::XMMATRIX& matrix, const float& rotation);
+	void zRotation(DirectX::XMMATRIX& matrix, const float& rotation);
+	void rotationMatrix(DirectX::XMMATRIX& matrix, float xRotation, float yRotation, float zRotation);
 }

@@ -31,6 +31,8 @@ public:
 	~Graphics();
 	static Graphics& getInstance();
 
+	void updateCamera(float dt);
+
 	//Debug here for now
 	//void ClearScreen();
 	void updateWindow();
@@ -81,6 +83,10 @@ private://Settings
 	float backGroundColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	ViewProj viewProj;
+	//cameraShit
+	DirectX::XMFLOAT3 camera_Position;
+	DirectX::XMFLOAT2 camera_Rotation;
+	void handleEvents(float dt);
 
 	//shaders
 	Shader defShader;

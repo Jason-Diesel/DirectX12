@@ -3,8 +3,9 @@
 
 class Model {
 public:
-	Model(std::string fileName);
+	Model();
 	void render();
+	std::vector<Mesh*>& getMeshes();
 private:
-	std::vector<Mesh> subMeshes;
+	std::vector<Mesh*> subMeshes;
 };

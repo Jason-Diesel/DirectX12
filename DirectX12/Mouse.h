@@ -44,6 +44,7 @@ class Mouse {
 public:
 	Mouse();
 	virtual ~Mouse();
+	void update();
 
 	bool IsLeftDown();
 	bool isMiddleDown();
@@ -54,6 +55,7 @@ public:
 	bool isRightPressed();
 
 	MousePoint getPos();
+	MousePoint getDeltaPos();
 	int getPosX();
 	int getPosY();
 	bool EventBufferEmpty();
@@ -80,6 +82,8 @@ private:
 	bool mouse_active;
 	bool once;
 	int x, y;
+	int LastX, LastY;
+	int DeltaX, DeltaY;
 	bool leaftIsDown, rightIsDown, midIsDown;
 	bool leaftDown, rightDown, midDown;
 	float mouseSense;

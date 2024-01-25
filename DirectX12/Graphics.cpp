@@ -3,19 +3,20 @@
 #include "imgui_impl_win32.h"
 
 Graphics::Graphics():
-	main_device(nullptr), dxgi_factory(nullptr)
+	main_device(nullptr), dxgi_factory(nullptr), camera_Position(0,1,0), camera_Rotation(0,0)
 {
 	window.Initialize(GetModuleHandle(NULL), "Penis", "a", windowWidth, windowHeight);
-
-
 	{
-		const DirectX::FXMVECTOR camPosition = DirectX::XMVectorSet(0, 0, -5, 1);
+		const DirectX::FXMVECTOR camPosition = DirectX::XMVectorSet(0, 0, -1, 1);
 		const DirectX::FXMVECTOR focusPoint = DirectX::XMVectorSet(0, 0, 0, 1);
 		const DirectX::FXMVECTOR upDirection = DirectX::XMVectorSet(0, 1, 0, 0);
 		viewProj.view = DirectX::XMMatrixLookAtLH(camPosition, focusPoint, upDirection);
 		const float aspectRatio = float(windowWidth) / float(windowHeight);
 		viewProj.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(fov), aspectRatio, 0.01f, 2000.f);
 	}
+
+	getMouse().activateMouse(true);
+
 	initInputLayouts();
 	setUpDirectX12();
 
@@ -97,6 +98,37 @@ Graphics& Graphics::getInstance()
 	return gfxInstance;
 }
 
+static float nextFPSUpdate = 0;
+static int frames = 0;
+void Graphics::updateCamera(float dt)
+{
+	getMouse().update();
+
+	handleEvents(dt);
+	
+	DirectX::XMMATRIX viewMatrix = DirectX::XMMATRIX(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		-camera_Position.x, -camera_Position.y, -camera_Position.z, 1.0f
+	);
+	HF::rotationMatrix(viewMatrix, camera_Rotation.x, camera_Rotation.y, 0);
+
+	viewProj.view = viewMatrix;
+
+	//more than just camera
+	nextFPSUpdate += dt;
+	frames++;
+	if (nextFPSUpdate > 0.5)
+	{
+		//float fps = frames * 2;
+		float fps = 1 / dt;
+		SetWindowTextA(window.getRenderWindow().getHandle(), std::to_string(fps).c_str());
+		nextFPSUpdate -= 0.5;
+		frames = 0;
+	}
+}
+
 void Graphics::updateWindow()
 {
 	//window.Update();
@@ -156,15 +188,15 @@ void Graphics::endFrame()
 		);
 		commandList->ResourceBarrier(1, &barrier);
 	}
+	
 	{
 		CheckHR(commandList->Close())
 		ID3D12CommandList* const commandLists[] = { commandList.Get() };
 		commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 	}
 	CheckHR(commandQueue->Signal(fence.Get(), ++fenceValue))
-	CheckHR(swapChain->Present(1, 0))
+	CheckHR(swapChain->Present(0, 0))
 	CheckHR(fence->SetEventOnCompletion(fenceValue, fenceEvent))
-
 	if (::WaitForSingleObject(fenceEvent, INFINITE) == WAIT_FAILED)
 	{
 		breakDebug;
@@ -301,11 +333,11 @@ TextureViewClass Graphics::createTexture(const std::string& filePath)
 {
 	return CreateTexture(
 		filePath,
-		main_device.Get(),
-		commandAllocator.Get(),
-		commandList.Get(),
-		commandQueue.Get(),
-		fence.Get(),
+		main_device,
+		commandAllocator,
+		commandList,
+		commandQueue,
+		fence,
 		fenceValue,
 		fenceEvent
 		);
@@ -332,6 +364,51 @@ Mouse& Graphics::getMouse()
 Keyboard& Graphics::getKeyboard()
 {
 	return this->window.getKeyboard();
+}
+
+void Graphics::handleEvents(float dt)
+{
+	static float speed = 100;
+	DirectX::XMFLOAT3 translation = DirectX::XMFLOAT3(0, 0, 0);
+	if (getKeyboard().isKeyPressed('W')) 
+	{
+		translation.z -= 1;
+	}
+	if (getKeyboard().isKeyPressed('S'))
+	{
+		translation.z += 1;
+	}
+	if (getKeyboard().isKeyPressed('D'))
+	{
+		translation.x -= 1;
+	}
+	if (getKeyboard().isKeyPressed('A'))
+	{
+		translation.x += 1;
+	}
+	if (getKeyboard().isKeyPressed(VK_SPACE))
+	{
+		camera_Position.y += dt * speed;
+	}
+	if (getKeyboard().isKeyPressed(VK_SHIFT))
+	{
+		camera_Position.y -= dt * speed;
+	}
+	{
+		camera_Rotation.x -= getMouse().getDeltaPos().x * getMouse().getSense();
+		camera_Rotation.y += getMouse().getDeltaPos().y * getMouse().getSense();
+	}
+
+	DirectX::XMStoreFloat3(&translation, DirectX::XMVector3Transform(
+		DirectX::XMLoadFloat3(&translation),
+		DirectX::XMMatrixRotationRollPitchYaw(camera_Rotation.y, camera_Rotation.x, 0) *
+		DirectX::XMMatrixScaling(1, 1, 1)//this line is not neccessary but I am afraid to break things
+	));
+	DirectX::XMFLOAT2 trans(translation.x, translation.z);
+	DirectX::XMVECTOR XMtrans = DirectX::XMVector2Normalize(DirectX::XMLoadFloat2(&trans));
+	DirectX::XMStoreFloat2(&trans, XMtrans);
+	camera_Position.x -= trans.x * speed * dt;
+	camera_Position.z -= trans.y * speed * dt;
 }
 
 void Graphics::setUpDirectX12()

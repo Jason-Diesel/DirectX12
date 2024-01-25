@@ -2,7 +2,7 @@
 
 Mouse::Mouse()
 {
-	mouseSense = 0.5f;
+	mouseSense = 0.05f;
 	mouse_active = false;
 	once = false;
 	x = y = 0;
@@ -11,6 +11,23 @@ Mouse::Mouse()
 
 Mouse::~Mouse()
 {
+}
+
+void Mouse::update()
+{
+	if (mouse_active)
+	{
+		//::ShowCursor(FALSE);
+		DeltaX = LastX - x;
+		DeltaY = LastY - y;
+		LastX = x;
+		LastY = y;
+	}
+	else {
+		DeltaX = 0;
+		DeltaY = 0;
+		//::ShowCursor(TRUE);
+	}
 }
 
 
@@ -47,6 +64,11 @@ bool Mouse::isRightPressed()
 MousePoint Mouse::getPos()
 {
 	return MousePoint({ x,y });
+}
+
+MousePoint Mouse::getDeltaPos()
+{
+	return MousePoint({DeltaX, DeltaY});
 }
 
 int Mouse::getPosX()

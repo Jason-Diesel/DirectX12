@@ -4,11 +4,11 @@
 
 TextureViewClass CreateTexture(
 	const std::string& filePath, 
-	ID3D12Device8* device, 
-	ID3D12CommandAllocator* commandAllocator, 
-	ID3D12GraphicsCommandList* commandList, 
-	ID3D12CommandQueue* commandQueue,
-	ID3D12Fence* fence,
+	Microsoft::WRL::ComPtr<ID3D12Device8>& device,
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>& commandAllocator,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue,
+	Microsoft::WRL::ComPtr<ID3D12Fence>& fence,
 	uint64_t &fenceValue,
 	HANDLE &fenceEvent
 );
