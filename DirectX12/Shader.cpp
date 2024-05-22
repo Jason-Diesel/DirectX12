@@ -21,9 +21,9 @@ void Shader::init(ID3D12Device8* device, std::vector<ConstantBuffer> constantBuf
 		);
 	}
 	//UGLY AF
+	const CD3DX12_DESCRIPTOR_RANGE descRange{ D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0 };
 	for (uint32_t i = 0; i < nrOfTexture; i++)
 	{
-		const CD3DX12_DESCRIPTOR_RANGE descRange{ D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, i };
 		rootParameters[index++].InitAsDescriptorTable(1, &descRange);
 	}
 	

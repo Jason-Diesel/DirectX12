@@ -121,8 +121,8 @@ void Graphics::updateCamera(float dt)
 	frames++;
 	if (nextFPSUpdate > 0.5)
 	{
-		//float fps = frames * 2;
-		float fps = 1 / dt;
+		float fps = frames * 2;
+		//float fps = 1 / dt;
 		SetWindowTextA(window.getRenderWindow().getHandle(), std::to_string(fps).c_str());
 		nextFPSUpdate -= 0.5;
 		frames = 0;
